@@ -15,13 +15,13 @@ MVP: темы, цели, прогресс, отчёты. Full-stack моноре
 
 ## Быстрый запуск всего проекта (одной командой)
 
-1) Установить зависимости:
+1. Установить зависимости:
 
 ```bash
 npm install
 ```
 
-2) Настроить окружение:
+1. Настроить окружение:
 
 ```bash
 cp apps/backend/.env.example apps/backend/.env
@@ -30,29 +30,29 @@ cp apps/frontend/.env.example apps/frontend/.env
 # frontend: VITE_API_URL (например, http://localhost:3000)
 ```
 
-3) Поднять БД и применить миграции + сид:
+1. Поднять БД и применить миграции + сид:
 
 ```bash
 npm run prisma:migrate      # из корня, запускает prisma migrate dev в backend
 npm run prisma:seed -w backend
 ```
 
-4) Старт обоих сервисов одной командой:
+1. Старт обоих сервисов одной командой:
 
 ```bash
 npm run dev
 ```
 
-	- backend: http://localhost:3000
- - frontend: http://localhost:5173
+- backend: http://localhost:3000
+- frontend: http://localhost:5173
 
 ## Проверка работоспособности (минимальный сценарий)
 
-1) Зарегистрировать пользователя на странице Register (frontend) или POST /auth/register.
-2) Войти (Login) — получите access в памяти и refresh-cookie.
-3) Дождаться истечения access (можно задать короткий JWT_ACCESS_TTL в .env для теста) — запросы должны автоматически вызвать POST /auth/refresh и продолжить работу.
-4) Logout — refresh-cookie очищается, последующий /auth/refresh вернёт 401.
-5) Основной сценарий: создать/посмотреть темы, цели, прогресс, отчёты (доступы зависят от роли).
+1. Зарегистрировать пользователя на странице Register (frontend) или POST /auth/register.
+1. Войти (Login) — получите access в памяти и refresh-cookie.
+1. Дождаться истечения access (можно задать короткий JWT_ACCESS_TTL в .env для теста) — запросы должны автоматически вызвать POST /auth/refresh и продолжить работу.
+1. Logout — refresh-cookie очищается, последующий /auth/refresh вернёт 401.
+1. Основной сценарий: создать/посмотреть темы, цели, прогресс, отчёты (доступы зависят от роли).
 
 ## Дополнительно
 
