@@ -93,6 +93,7 @@ API — верхнеуровневые ресурсы и операции
 - Геймификация: бейджи, достижения за выполнение целей
 - Документация API (OpenAPI/Swagger)
 - Тесты: unit + интеграционные
+
 ---
 
 ## Подробные операции API, схемы и поведение
@@ -119,6 +120,7 @@ Auth
 - POST `/auth/refresh` — `{refreshToken}` → `200 {accessToken}`
 
 **Примечание:** Разница между `/auth/register` и `POST /users`:
+
 - `/auth/register` — самостоятельная регистрация (создаётся только роль `user`)
 - `POST /users` (admin) — создание пользователей администратором (можно указать роль)
 
@@ -178,6 +180,7 @@ Reports (отчёты)
 
   - **Права:** admin or self (userId === req.user.id)
   - Response (для построения диаграмм на клиенте):
+
   ```json
   {
     "userId": "uuid",
@@ -206,6 +209,7 @@ Reports (отчёты)
 
   - **Права:** admin only
   - Response:
+
   ```json
   {
     "topicId": "uuid",
