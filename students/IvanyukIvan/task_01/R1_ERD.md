@@ -6,45 +6,48 @@
 
 ```mermaid
 erDiagram
-  USER ||--o{ GOAL : has
-  TOPIC ||--o{ GOAL : contains
-  GOAL ||--o{ PROGRESS_ENTRY : tracks
-  GOAL ||--o{ REMINDER : has
+		USER ||--o{ GOAL : has
+		TOPIC ||--o{ GOAL : contains
+		GOAL ||--o{ PROGRESS_ENTRY : tracks
+		GOAL ||--o{ REMINDER : has
 
-  USER {
-   id int PK
-   username varchar
-   password_hash varchar
-   role varchar
-  }
-  TOPIC {
-   id int PK
-   name varchar
-   description text
-   created_at datetime
-  }
-  GOAL {
-   id int PK
-   topic_id int FK
-   user_id int FK
-   name varchar
-   description text
-   target_value int
-   deadline datetime
-  }
-  PROGRESS_ENTRY {
-   id int PK
-   goal_id int FK
-   timestamp datetime
-   value int
-   comment text
-  }
-  REMINDER {
-   id int PK
-   goal_id int FK
-   reminder_time datetime
-   message text
-  }
+		USER {
+			id uuid PK
+			username varchar unique
+			email varchar unique
+			password_hash varchar
+			role varchar
+			created_at timestamp
+		}
+		TOPIC {
+			id uuid PK
+			name varchar
+			description text
+			created_at timestamp
+		}
+		GOAL {
+			id uuid PK
+			topic_id uuid FK
+			user_id uuid FK
+			name varchar
+			description text
+			target_value int
+			deadline datetime
+			created_at timestamp
+		}
+		PROGRESS_ENTRY {
+			id uuid PK
+			goal_id uuid FK
+			timestamp timestamp
+			value int
+			comment text
+		}
+		REMINDER {
+			id uuid PK
+			goal_id uuid FK
+			reminder_time timestamp
+			message text
+		}
 ```
 
 ## ASCII-эскиз
@@ -67,41 +70,57 @@ User 1---* Goal *---1 Topic
 
 ```sql
 CREATE TABLE users (
- id UUID PRIMARY KEY,
- username TEXT UNIQUE NOT NULL,
- password_hash TEXT NOT NULL,
- role TEXT NOT NULL CHECK (role IN ('admin','user'))
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	username TEXT UNIQUE NOT NULL CHECK (username ~ '^[a-zA-Z0-9_]{3,30}$'),
+	email TEXT UNIQUE NOT NULL CHECK (email ~ '^[^@]+@[^@]+\.[^@]+$'),
+	password_hash TEXT NOT NULL,
+	role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','user')),
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE TABLE topics (
- id UUID PRIMARY KEY,
- name TEXT NOT NULL,
- description TEXT,
- created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	name TEXT NOT NULL,
+	description TEXT,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE TABLE goals (
- id UUID PRIMARY KEY,
- topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
- user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
- name TEXT NOT NULL,
- description TEXT,
- target_value INTEGER NOT NULL,
- deadline TIMESTAMP WITH TIME ZONE
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	name TEXT NOT NULL,
+	description TEXT,
+	target_value INTEGER NOT NULL CHECK (target_value > 0),
+	deadline TIMESTAMP WITH TIME ZONE,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- Индексы для быстрого поиска целей по пользователю и теме
+CREATE INDEX idx_goals_user_id ON goals(user_id);
+CREATE INDEX idx_goals_topic_id ON goals(topic_id);
 
 CREATE TABLE progress_entries (
- id UUID PRIMARY KEY,
- goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
- timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
- value INTEGER NOT NULL,
- comment TEXT
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+	timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	value INTEGER NOT NULL CHECK (value >= 0),
+	comment TEXT CHECK (length(comment) <= 5000)
 );
 
+-- Индекс для быстрого поиска прогресса по цели
+CREATE INDEX idx_progress_goal_id ON progress_entries(goal_id);
+CREATE INDEX idx_progress_timestamp ON progress_entries(timestamp);
+
+-- ВАЖНО: Таблица reminders НЕ входит в MVP и создаётся только при реализации бонусной функциональности
 CREATE TABLE reminders (
- id UUID PRIMARY KEY,
- goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
- reminder_time TIMESTAMP WITH TIME ZONE NOT NULL,
- message TEXT
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+	reminder_time TIMESTAMP WITH TIME ZONE NOT NULL,
+	message TEXT NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+CREATE INDEX idx_reminders_goal_id ON reminders(goal_id);
+CREATE INDEX idx_reminders_time ON reminders(reminder_time);
 ```

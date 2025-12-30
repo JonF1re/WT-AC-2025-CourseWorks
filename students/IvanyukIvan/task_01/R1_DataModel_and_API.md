@@ -4,9 +4,11 @@
 
 - User
   - id: UUID
-  - username: string (unique)
+  - username: string (unique, латиница+цифры+underscore, 3-30 символов)
+  - email: string (unique, валидный email)
   - password_hash: string
   - role: enum [admin, user]
+  - created_at: datetime
 
 - Topic
   - id: UUID
@@ -20,8 +22,11 @@
   - user_id: reference -> User.id
   - name: string
   - description: string
-  - target_value: number
+  - target_value: number (целевое значение для достижения)
+  - current_progress: **вычисляется как SUM(ProgressEntry.value) для данной Goal**
+  - progress_percentage: **вычисляется как (current_progress / target_value) * 100**
   - deadline: datetime
+  - created_at: datetime
 
 - ProgressEntry
   - id: UUID
@@ -47,11 +52,11 @@
 API — верхнеуровневые ресурсы и операции
 
 - /users
-  - GET /users (admin)
-  - POST /users (admin)
-  - GET /users/{id}
-  - PUT /users/{id}
-  - DELETE /users/{id}
+  - GET /users (admin only)
+  - POST /users (admin only, для создания пользователей администратором)
+  - GET /users/{id} (admin or self)
+  - PUT /users/{id} (admin or self, частичное обновление)
+  - DELETE /users/{id} (admin only)
 
 - /topics
   - GET /topics (list)
@@ -61,22 +66,26 @@ API — верхнеуровневые ресурсы и операции
   - DELETE /topics/{id} (admin)
 
 - /goals
-  - GET /goals (filter by user, topic)
-  - POST /goals (admin)
-  - GET /goals/{id}
-  - PUT /goals/{id} (admin or owner)
-  - DELETE /goals/{id} (admin)
+  - GET /goals (list all; **scope:** user видит только свои, admin видит все)
+    - Query params: ?userId=&topicId=&limit=&offset=
+  - POST /goals (admin only, назначает цели пользователям)
+  - GET /goals/{id} (owner or admin)
+  - PUT /goals/{id} (owner может редактировать name/description/deadline; admin может всё)
+  - DELETE /goals/{id} (admin only)
 
 - /progress
-  - POST /progress (create entry)
-  - GET /progress?goal_id=&from=&to=&limit=&offset=
-  - GET /progress/{id}
-  - PUT /progress/{id}
-  - DELETE /progress/{id}
+  - POST /progress (создание записи; **проверка:** goal.userId === req.user.id or admin)
+  - GET /progress (список записей; **scope:** user видит только свои, admin видит все)
+    - Query params: ?goalId=&userId=&from=&to=&limit=&offset=
+  - GET /progress/{id} (owner or admin)
+  - PUT /progress/{id} (owner or admin)
+  - DELETE /progress/{id} (owner or admin)
 
 - /reports
-  - GET /reports/user/{id}?from=&to= (statistics)
-  - GET /reports/topic/{id}?from=&to= (topic summary)
+  - GET /reports/user/{id}?from=&to= (**права:** admin or self)
+    - Возвращает статистику пользователя для построения диаграмм
+  - GET /reports/topic/{id}?from=&to= (admin only)
+    - Возвращает статистику по теме
 
 Дополнительно (бонусы)
 
@@ -84,7 +93,6 @@ API — верхнеуровневые ресурсы и операции
 - Геймификация: бейджи, достижения за выполнение целей
 - Документация API (OpenAPI/Swagger)
 - Тесты: unit + интеграционные
-
 ---
 
 ## Подробные операции API, схемы и поведение
@@ -106,17 +114,22 @@ API — верхнеуровневые ресурсы и операции
 
 Auth
 
-- POST `/auth/register` — `{email, password, name}` → `201 {id, email, name, role}`
-- POST `/auth/login` — `{email, password}` → `200 {accessToken, refreshToken, user}`
+- POST `/auth/register` — `{username, email, password}` → `201 {id, username, email, role}` (роль по умолчанию: `user`)
+- POST `/auth/login` — `{email, password}` → `200 {accessToken, refreshToken, user: {id, username, email, role}}`
 - POST `/auth/refresh` — `{refreshToken}` → `200 {accessToken}`
+
+**Примечание:** Разница между `/auth/register` и `POST /users`:
+- `/auth/register` — самостоятельная регистрация (создаётся только роль `user`)
+- `POST /users` (admin) — создание пользователей администратором (можно указать роль)
 
 Users
 
-- GET `/users?limit=&offset=` — Admin
+- GET `/users?limit=&offset=` — Admin only
 - GET `/users/{id}` — Admin или self
-- POST `/users` — Admin (payload: `{username,email,password,role?}`)
-- PUT `/users/{id}` — Admin или self (частичное обновление)
-- DELETE `/users/{id}` — Admin
+- POST `/users` — Admin only (payload: `{username, email, password, role?}`)
+  - Позволяет создавать пользователей с указанием роли
+- PUT `/users/{id}` — Admin (любые поля) или self (только email, password)
+- DELETE `/users/{id}` — Admin only
 
 Topics
 
@@ -128,11 +141,17 @@ Topics
 
 Goals
 
-- POST `/goals` — Admin `{topicId, userId, name, description, targetValue, deadline}` → `201 {id}`
-- GET `/goals?userId=&topicId=` — список целей
-- GET `/goals/{id}` — детали цели, включает прогресс
-- PUT `/goals/{id}` — Admin или owner
-- DELETE `/goals/{id}` — Admin
+- POST `/goals` — Admin only `{topicId, userId, name, description, targetValue, deadline}` → `201 {id, ...}`
+  - Администратор создаёт цели и назначает их пользователям
+- GET `/goals?userId=&topicId=&limit=&offset=` — список целей
+  - **Scope:** user видит только свои цели (WHERE user_id = req.user.id), admin видит все
+- GET `/goals/{id}` — детали цели с вычисленным прогрессом
+  - Response: `{id, name, description, targetValue, currentProgress, progressPercentage, deadline, ...}`
+  - **Права:** owner or admin
+- PUT `/goals/{id}` — частичное обновление
+  - **Owner:** может менять name, description, deadline
+  - **Admin:** может менять всё (включая userId, topicId, targetValue)
+- DELETE `/goals/{id}` — Admin only
 
 Progress (записи прогресса)
 
@@ -157,17 +176,101 @@ Reports (отчёты)
 
 - GET `/reports/user/{userId}?from=&to=` — статистика пользователя
 
-  - Response: `{userId, totalGoals, completedGoals, progressPercentage, topicsSummary: [{topicId, topicName, goalsCount, completedCount}]}`
+  - **Права:** admin or self (userId === req.user.id)
+  - Response (для построения диаграмм на клиенте):
+  ```json
+  {
+    "userId": "uuid",
+    "username": "string",
+    "totalGoals": 10,
+    "completedGoals": 7,
+    "inProgressGoals": 3,
+    "progressPercentage": 70,
+    "topicsSummary": [
+      {
+        "topicId": "uuid",
+        "topicName": "Математика",
+        "goalsCount": 5,
+        "completedCount": 4,
+        "progressPercentage": 80
+      }
+    ],
+    "progressOverTime": [
+      {"date": "2025-12-01", "totalProgress": 30},
+      {"date": "2025-12-15", "totalProgress": 70}
+    ]
+  }
+  ```
 
 - GET `/reports/topic/{topicId}?from=&to=` — статистика по теме
 
-  - Response: `{topicId, topicName, totalGoals, completedGoals, usersSummary: [{userId, username, goalsCount, completedCount}]}`
+  - **Права:** admin only
+  - Response:
+  ```json
+  {
+    "topicId": "uuid",
+    "topicName": "Математика",
+    "totalGoals": 15,
+    "completedGoals": 10,
+    "progressPercentage": 67,
+    "usersSummary": [
+      {
+        "userId": "uuid",
+        "username": "ivanov",
+        "goalsCount": 5,
+        "completedCount": 3,
+        "progressPercentage": 60
+      }
+    ]
+  }
+  ```
 
-Reminders (бонус)
+Reminders (НЕ входит в MVP, только бонус)
+
+**ВАЖНО:** Сущность Reminder реализуется только после MVP. В минимальной версии её нет.
 
 - POST `/reminders` — создать напоминание `{goalId, reminderTime, message}`
 - GET `/reminders?userId=` — список напоминаний пользователя
 - DELETE `/reminders/{id}` — удалить напоминание
+
+---
+
+## Механизмы безопасности и проверки прав
+
+### Scope-ограничения (уровень базы данных)
+
+```typescript
+// Пример middleware для фильтрации запросов
+function applyScopeFilter(req, query) {
+  if (req.user.role !== 'admin') {
+    query.where.userId = req.user.id;  // Пользователь видит только свои записи
+  }
+  return query;
+}
+```
+
+### Проверка прав на уровне записи
+
+```typescript
+// Пример для PUT /goals/{id}
+const goal = await Goal.findById(id);
+if (req.user.role !== 'admin' && goal.userId !== req.user.id) {
+  throw new ForbiddenError('У вас нет прав на редактирование этой цели');
+}
+```
+
+### Валидация на сервере (Zod)
+
+```typescript
+const createGoalSchema = z.object({
+  topicId: z.string().uuid(),
+  userId: z.string().uuid(),
+  name: z.string().min(1, 'Введите название цели'),
+  description: z.string().optional(),
+  targetValue: z.number().positive('Целевое значение должно быть положительным'),
+  deadline: z.string().datetime().optional()
+});
+```
 
 ---
 
