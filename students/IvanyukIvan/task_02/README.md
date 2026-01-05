@@ -43,8 +43,8 @@ npm run prisma:seed -w backend
 npm run dev
 ```
 
-- backend: http://localhost:3000
-- frontend: http://localhost:5173
+- backend: <http://localhost:3000>
+- frontend: <http://localhost:5173>
 
 ## Проверка работоспособности (минимальный сценарий)
 
