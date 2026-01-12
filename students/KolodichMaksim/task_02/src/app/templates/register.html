@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- htmlhint disable doctype-first -->
+<h2>Регистрация</h2>
+<div id="register-alert"></div>
+<form id="register-form">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input class="form-control" name="email" type="email" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Пароль</label>
+    <input class="form-control" name="password" type="password" required minlength="6">
+  </div>
+  <button class="btn btn-primary">Зарегистрироваться</button>
+</form>
+<p class="small-muted mt-3">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
+<script>
+function showAlert(container, msg, type='danger'){
+  container.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+}
+
+document.getElementById('register-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const alertEl = document.getElementById('register-alert');
+  alertEl.innerHTML = '';
+  try{
+    const res = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        email: form.email.value,
+        password: form.password.value
+      })
+    });
+    const data = await res.json();
+    if(res.ok){
+      console.log('Register success', data);
+      localStorage.setItem('token', data.access_token);
+      showAlert(alertEl, 'Registered as '+data.user.email+' — token: '+(data.access_token||'').slice(0,8)+'...', 'success');
+      setTimeout(()=> window.location = '/dashboard.html', 700);
+    } else {
+      showAlert(alertEl, data.msg || JSON.stringify(data));
+      console.warn('Register failed, server response:', data);
+    }
+  }catch(err){
+    showAlert(alertEl, 'Network error. Please try again.');
+  }
+});
+</script>
+{% endblock %}

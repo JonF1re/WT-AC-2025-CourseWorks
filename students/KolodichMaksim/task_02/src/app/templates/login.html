@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- htmlhint disable doctype-first -->
+<h2>Вход</h2>
+<div id="login-alert"></div>
+<form id="login-form">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input class="form-control" name="email" type="email" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Пароль</label>
+    <input class="form-control" name="password" type="password" required>
+  </div>
+  <button class="btn btn-primary">Войти</button>
+</form>
+<p class="small-muted mt-3">Нет аккаунта? <a href="/register.html">Зарегистрироваться</a></p>
+<script>
+function showAlert(container, msg, type='danger'){
+  container.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const alertEl = document.getElementById('login-alert');
+  alertEl.innerHTML = '';
+  try{
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        email: form.email.value,
+        password: form.password.value
+      })
+    });
+    const data = await res.json();
+    if(res.ok){
+      console.log('Login success', data);
+      localStorage.setItem('token', data.access_token);
+      showAlert(alertEl, 'Logged in as '+data.user.email+' — token: '+(data.access_token||'').slice(0,8)+'...', 'success');
+      setTimeout(()=> window.location = '/dashboard.html', 700);
+    } else {
+      showAlert(alertEl, data.msg || JSON.stringify(data));
+      console.warn('Login failed, server response:', data);
+    }
+  }catch(err){
+    showAlert(alertEl, 'Network error. Please try again.');
+  }
+});
+</script>
+{% endblock %}
