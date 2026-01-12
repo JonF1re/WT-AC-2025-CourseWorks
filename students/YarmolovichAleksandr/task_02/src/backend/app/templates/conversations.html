@@ -1,0 +1,16 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<h1>Conversations</h1>
+<div id="conv-list"></div>
+<div id="conv-pane" class="mt-3 d-none">
+  <h3 id="conv-header"></h3>
+  <div id="messages" class="border p-3 mb-3" style="height:300px;overflow:auto"></div>
+  <form id="msg-form">
+    <div class="input-group">
+      <input class="form-control" id="msg-text" placeholder="Type a message...">
+      <button class="btn btn-primary" type="submit">Send</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

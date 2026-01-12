@@ -1,0 +1,29 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<h1>Admin</h1>
+<ul class="nav nav-tabs mb-3" id="admin-tabs">
+  <li class="nav-item"><a class="nav-link active" href="#" data-tab="users-tab">Users</a></li>
+  <li class="nav-item"><a class="nav-link" href="#" data-tab="categories-tab">Categories</a></li>
+  <li class="nav-item"><a class="nav-link" href="#" data-tab="reports-tab">Reports</a></li>
+</ul>
+
+<div id="admin-content">
+  <div id="users-tab">
+    <div id="users-list"></div>
+  </div>
+  <div id="categories-tab" class="d-none">
+    <h4>Create category</h4>
+    <form id="create-category-form" class="mb-3">
+      <div class="input-group">
+        <input class="form-control" id="new-category-name" placeholder="Category name">
+        <button class="btn btn-primary" type="submit">Create</button>
+      </div>
+    </form>
+    <div id="categories-list"></div>
+  </div>
+  <div id="reports-tab" class="d-none">
+    <div id="admin-report-list"></div>
+  </div>
+</div>
+{% endblock %}

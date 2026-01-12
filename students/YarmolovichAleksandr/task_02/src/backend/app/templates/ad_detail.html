@@ -1,0 +1,353 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .ad-detail-gallery {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .gallery-main {
+    width: 100%;
+    height: 400px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  
+  .gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .gallery-thumbnails {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: #fafafa;
+    overflow-x: auto;
+  }
+  
+  .gallery-thumb {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    background: white;
+    transition: all 0.2s;
+  }
+  
+  .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .gallery-thumb:hover {
+    border-color: #0d6efd;
+    transform: scale(1.05);
+  }
+  
+  .gallery-thumb.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+  }
+  
+  .ad-detail-header {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .ad-detail-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1f2937;
+  }
+  
+  .ad-detail-price {
+    font-size: 32px;
+    font-weight: 700;
+    color: #059669;
+    margin-bottom: 16px;
+  }
+  
+  .ad-detail-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .meta-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .meta-value {
+    font-size: 1rem;
+    color: #1f2937;
+    font-weight: 500;
+  }
+  
+  .ad-detail-seller {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .seller-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1f2937;
+  }
+  
+  .seller-info {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .seller-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+  }
+  
+  .seller-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #0284c7;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  
+  .ad-detail-description {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .description-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1f2937;
+  }
+  
+  .description-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4b5563;
+    white-space: pre-wrap;
+  }
+  
+  .chat-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chat-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1f2937;
+  }
+  
+  .messages-box {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .message {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border-left: 3px solid #0d6efd;
+  }
+  
+  .message-author {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+  }
+  
+  .message-text {
+    color: #4b5563;
+    font-size: 0.95rem;
+  }
+  
+  .action-buttons {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .action-buttons .btn {
+    padding: 12px 16px;
+    font-weight: 500;
+  }
+</style>
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Gallery -->
+      <div class="ad-detail-gallery" id="gallery-section">
+        <div class="gallery-main">
+          <img id="main-image" src=" " alt="Product image">
+        </div>
+        <div class="gallery-thumbnails" id="gallery-thumbnails"></div>
+      </div>
+
+      <!-- Description -->
+      <div class="ad-detail-description">
+        <h2 class="description-title">📋 Description</h2>
+        <p class="description-text" id="ad-description"></p>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat-container d-none" id="ad-conversation">
+        <h3 class="chat-title">💬 Chat with seller</h3>
+        <div class="messages-box" id="ad-messages"></div>
+        <form id="ad-msg-form" class="input-group">
+          <input id="ad-msg-text" class="form-control" placeholder="Write a message..." autocomplete="off">
+          <button class="btn btn-primary" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Header Info -->
+      <div class="ad-detail-header">
+        <h1 class="ad-detail-title" id="ad-title"></h1>
+        <div class="ad-detail-price" id="ad-price"></div>
+        
+        <div class="ad-detail-meta">
+          <div class="meta-item">
+            <span class="meta-label">📁 Category</span>
+            <span class="meta-value" id="ad-category">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">📅 Posted</span>
+            <span class="meta-value" id="ad-date">—</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button id="write-btn" class="btn btn-primary btn-lg w-100">✉️ Message Seller</button>
+          <a href="#" class="btn btn-secondary w-100 d-none" id="edit-ad-btn">✏️ Edit Ad</a>
+          <button class="btn btn-warning w-100 d-none" id="close-ad-btn">🔒 Close Ad</button>
+          <button id="report-btn" class="btn btn-outline-danger w-100">⚠️ Report Ad</button>
+        </div>
+      </div>
+
+      <!-- Seller Info -->
+      <div class="ad-detail-seller">
+        <h3 class="seller-title">👤 Seller Information</h3>
+        <div class="seller-info">
+          <p class="seller-name" id="seller-name">—</p>
+          <span class="seller-badge">Verified Seller</span>
+        </div>
+        <div class="d-grid">
+          <button id="write-btn-seller" class="btn btn-primary">📧 Contact Seller</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal" tabindex="-1" id="report-modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Report Ad</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Reason for reporting</label>
+          <textarea class="form-control" id="report-reason" rows="4" placeholder="Tell us why you're reporting this ad..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" id="submit-report">Submit Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const mainImage = document.getElementById('main-image');
+  const galleryThumbnails = document.getElementById('gallery-thumbnails');
+  
+  window.setupGallery = function(images) {
+    galleryThumbnails.innerHTML = '';
+    if (images.length === 0) {
+      document.getElementById('gallery-section').innerHTML = '<div style="height: 400px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af;">No images</div>';
+      return;
+    }
+    
+    images.forEach((img, index) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'gallery-thumb' + (index === 0 ? ' active' : '');
+      thumb.innerHTML = '<img src="' + img.url + '" alt="">';
+      thumb.addEventListener('click', () => {
+        mainImage.src = img.url;
+        document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+      });
+      galleryThumbnails.appendChild(thumb);
+    });
+    
+    if (images.length > 0) {
+      mainImage.src = images[0].url;
+    }
+  };
+});
+</script>
+{% endblock %}

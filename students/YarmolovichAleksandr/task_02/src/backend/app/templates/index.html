@@ -1,0 +1,33 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 style="font-size: 2rem; font-weight: 700; color: #111827;">Browse Ads</h1>
+    <a href="/ads/new" class="btn btn-primary">+ Create Ad</a>
+  </div>
+  
+  <div class="filter-section">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Search</label>
+        <input class="form-control" id="search-input" placeholder="Search by title...">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Category</label>
+        <select id="category-filter" class="form-select">
+          <option value="">All categories</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ads-list" class="row g-4 mb-4"></div>
+
+<div id="empty-ads" class="empty-state d-none">
+  <div class="empty-state-icon">📭</div>
+  <h3 style="color: #4b5563; margin-bottom: 0.5rem;">No ads found</h3>
+  <p style="color: #9ca3af;">Try adjusting your filters or check back later</p>
+</div>
+{% endblock %}

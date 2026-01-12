@@ -1,0 +1,16 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<h1>Profile</h1>
+<form id="profile-form">
+  <div class="mb-3">
+    <label class="form-label">Username</label>
+    <input class="form-control" id="profile-username" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input class="form-control" id="profile-email" required>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}
