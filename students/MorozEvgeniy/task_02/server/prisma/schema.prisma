@@ -1,0 +1,146 @@
+// =========================
+// Prisma schema
+// =========================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================
+// ENUMS
+// =========================
+
+enum Role {
+  admin
+  user
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+}
+
+// =========================
+// MODELS
+// =========================
+
+model User {
+  id           String        @id @default(uuid())
+  username     String        @unique
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         Role          @default(user)
+  preferences  Json          @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  recipes      Recipe[]
+  mealPlans    MealPlan[]
+  shopping     ShoppingItem[]
+
+  @@map("users")
+}
+
+model Ingredient {
+  id         String             @id @default(uuid())
+  name       String             @unique
+  unit       String
+  calories   Float              @default(0)
+  isAllergen Boolean            @default(false) @map("is_allergen")
+
+  recipes    RecipeIngredient[]
+  shopping   ShoppingItem[]
+
+  @@map("ingredients")
+}
+
+model Tag {
+  id    String   @id @default(uuid())
+  name  String   @unique
+  type  String   // diet | meal_type | feature
+
+  recipes RecipeTag[]
+
+  @@map("tags")
+}
+
+model Recipe {
+  id           String              @id @default(uuid())
+  title        String
+  description  String?
+  instructions String
+  prepTime     Int                 @map("prep_time")
+  servings     Int
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  authorId     String              @map("author_id")
+  author       User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  ingredients  RecipeIngredient[]
+  tags         RecipeTag[]
+  mealPlans    MealPlan[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id           String      @id @default(uuid())
+  recipeId     String      @map("recipe_id")
+  ingredientId String      @map("ingredient_id")
+  amount       Float
+  unit         String
+
+  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient  @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@unique([recipeId, ingredientId])
+  @@map("recipe_ingredients")
+}
+
+model RecipeTag {
+  id       String  @id @default(uuid())
+  recipeId String  @map("recipe_id")
+  tagId    String  @map("tag_id")
+
+  recipe   Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag      Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, tagId])
+  @@map("recipe_tags")
+}
+
+model MealPlan {
+  id        String    @id @default(uuid())
+  date      DateTime
+  mealType  MealType  @map("meal_type")
+
+  userId    String    @map("user_id")
+  recipeId  String    @map("recipe_id")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, mealType])
+  @@map("meal_plans")
+}
+
+model ShoppingItem {
+  id           String      @id @default(uuid())
+  amount       Float       @default(1)
+  isBought     Boolean     @default(false) @map("is_bought")
+  customName   String?     @map("custom_name")
+
+  userId       String      @map("user_id")
+  ingredientId String?     @map("ingredient_id")
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+
+  @@map("shopping_items")
+}

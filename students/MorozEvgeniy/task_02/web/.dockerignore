@@ -1,0 +1,24 @@
+﻿# Dependencies
+node_modules
+.pnpm
+.pnpm-store
+
+# Build
+dist
+
+# Logs
+npm-debug.log
+pnpm-debug.log
+
+# Git
+.git
+.gitignore
+
+# Env
+.env
+.env.*
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
