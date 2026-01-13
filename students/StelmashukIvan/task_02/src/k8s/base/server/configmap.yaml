@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+data:
+  node-env: "production"
+  log-level: "info"
+  cors-origins: "*"
+  # Для продакшена укажите конкретные домены:
+  # cors-origins: "https://your-domain.com,https://api.your-domain.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swagger-config
+data:
+  swagger.json: |
+    {
+      "openapi": "3.0.0",
+      "info": {
+        "title": "Smart Home Monitoring API",
+        "version": "1.0.0"
+      }
+      # Ваш swagger.json контент
+    }

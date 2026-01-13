@@ -1,0 +1,59 @@
+.admin-users-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.users-table-wrapper {
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.users-table th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.users-table tbody tr:hover {
+  background: var(--bg);
+}
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.role-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.role-select.admin {
+  background: rgb(59 130 246 / 10%);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.role-select.user {
+  background: rgb(107 114 128 / 10%);
+  color: var(--muted);
+}

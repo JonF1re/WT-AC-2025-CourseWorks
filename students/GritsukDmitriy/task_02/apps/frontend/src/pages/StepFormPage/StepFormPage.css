@@ -1,0 +1,81 @@
+.step-form-page {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.step-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.resources-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.resources-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.resources-section h2 {
+  margin: 0;
+}
+
+.resource-form {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.resources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.resources-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.resources-list li:last-child {
+  border-bottom: none;
+}
+
+.resources-list .res-type {
+  font-size: 1.25rem;
+}
+
+.resources-list a {
+  flex: 1;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.resources-list a:hover {
+  text-decoration: underline;
+}
+
+.btn-danger.small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}

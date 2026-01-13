@@ -1,0 +1,43 @@
+{
+  "name": "micro-twitter-myslivslukh",
+  "version": "1.0.0",
+  "description": "Микро-твиттер «Мысли вслух» - Full-stack приложение",
+  "private": true,
+  "workspaces": [
+    "src/apps/server",
+    "src/apps/web"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd src/apps/server && npm install && cd ../web && npm install",
+    "dev:server": "cd src/apps/server && npm run start:dev",
+    "dev:web": "cd src/apps/web && npm run dev",
+    "build:server": "cd src/apps/server && npm run build",
+    "build:web": "cd src/apps/web && npm run build",
+    "start:server": "cd src/apps/server && npm run start:prod",
+    "preview:web": "cd src/apps/web && npm run preview",
+    "db:migrate": "cd src/apps/server && npx prisma migrate dev",
+    "db:studio": "cd src/apps/server && npx prisma studio",
+    "db:seed": "cd src/apps/server && npx prisma db seed",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "test": "cd src/apps/server && npm test",
+    "test:coverage": "cd src/apps/server && npm run test:cov",
+    "test:e2e": "cd src/apps/server && npm run test:e2e",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui"
+  },
+  "keywords": [
+    "nestjs",
+    "react",
+    "typescript",
+    "prisma",
+    "postgresql",
+    "vite"
+  ],
+  "author": "Vashchuk Anatoliy",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

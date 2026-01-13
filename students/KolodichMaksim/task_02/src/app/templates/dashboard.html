@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% block content %}
+<h2>Дашборд</h2>
+<div class="mb-3">
+  <button id="show-auth" class="btn btn-outline-secondary btn-sm">Show auth header</button>
+  <button id="show-token" class="btn btn-outline-secondary btn-sm ms-2">Show token</button>
+  <button id="clear-token" class="btn btn-outline-danger btn-sm ms-2">Clear token</button>
+  <div id="auth-output" class="mt-2 small-muted"></div>
+</div>
+<div id="metrics-list" class="row gy-3"></div>
+<hr>
+<h3>Быстрая запись</h3>
+<form id="quick-entry" class="row g-2">
+  <div class="col-auto">
+    <select id="quick-metric" class="form-select"></select>
+  </div>
+  <div class="col-auto">
+    <input id="quick-value" class="form-control" placeholder="value">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-success">Добавить</button>
+  </div>
+</form>
+
+<hr>
+<h3>Создать метрику</h3>
+<form id="create-metric" class="row g-2">
+  <div class="col-auto"><input class="form-control" name="name" placeholder="Название"></div>
+  <div class="col-auto"><input class="form-control" name="unit" placeholder="Единицы (e.g. ml)"></div>
+  <div class="col-auto"><input class="form-control" name="target" type="number" placeholder="Цель (опционально)"></div>
+  <div class="col-auto"><input class="form-control" name="color" placeholder="Цвет (#hex)"></div>
+  <div class="col-auto"><button class="btn btn-primary">Создать метрику</button></div>
+</form>
+
+<script>
+async function api(path, opts={}){
+  opts.headers = opts.headers || {};
+  const token = localStorage.getItem('token');
+  if(token) opts.headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch('/api/v1'+path, opts);
+  if(res.status===401){
+    localStorage.removeItem('token');
+    alert('Session expired or unauthorized. Please login again.');
+    window.location='/login.html';
+    throw 'unauth';
+  }
+  if(res.status>=400){
+    const err = await res.json().catch(()=>({msg: 'Unknown error'}));
+    throw new Error(err.msg || 'Request failed');
+  }
+  return res.json();
+}
+
+async function load(){
+  const dash = await api('/dashboard');
+  const list = document.getElementById('metrics-list');
+  list.innerHTML='';
+  const select = document.getElementById('quick-metric');
+  select.innerHTML='';
+  if(!dash.metrics || !dash.metrics.length){
+    list.innerHTML = `<div class="col-12"><div class="card p-4 text-center"><h4>Похоже, у вас ещё нет метрик</h4><p class="small-muted">Создайте первую метрику, чтобы начать отслеживать привычки.</p><a class="btn btn-primary mt-2" href="#create">Создать метрику</a></div></div>`;
+    return;
+  }
+  for(const m of dash.metrics){
+    const col = document.createElement('div'); col.className='col-md-4';
+    col.innerHTML = `<div class="card p-3"><h5>${m.name}</h5><p>${m.total_today||0} ${m.unit||''}</p><div class="progress"><div class="progress-bar" role="progressbar" style="width:${(m.progress||0)*100}%">${m.target||''}</div></div><div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="/metric.html?id=${m.id}">Открыть</a></div></div>`
+    list.appendChild(col);
+    const opt = document.createElement('option'); opt.value=m.id; opt.text=m.name; select.appendChild(opt);
+  }
+}
+
+document.getElementById('quick-entry').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const m = document.getElementById('quick-metric').value;
+  const v = parseFloat(document.getElementById('quick-value').value);
+  await api('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({metric_id: m, value: v})});
+  load();
+});
+
+document.getElementById('create-metric').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const payload = { name: form.name.value, unit: form.unit.value, target_value: form.target.value?parseFloat(form.target.value):null, color: form.color.value };
+  await api('/metrics', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  form.reset();
+  load();
+});
+
+// debug helpers
+document.getElementById('show-auth').addEventListener('click', async ()=>{
+  const out = document.getElementById('auth-output'); out.textContent = 'checking...';
+  try{
+    const res = await fetch('/api/v1/debug/headers', {headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}});
+    const json = await res.json();
+    out.textContent = JSON.stringify(json);
+  }catch(err){ out.textContent = 'Error: '+err.message; }
+});
+
+document.getElementById('show-token').addEventListener('click', ()=>{
+  const out = document.getElementById('auth-output'); out.textContent = localStorage.getItem('token') || 'no token stored';
+});
+
+document.getElementById('clear-token').addEventListener('click', ()=>{
+  localStorage.removeItem('token'); document.getElementById('auth-output').textContent = 'token cleared'; setTimeout(()=>location.reload(), 500);
+});
+
+load();
+</script>
+{% endblock %}

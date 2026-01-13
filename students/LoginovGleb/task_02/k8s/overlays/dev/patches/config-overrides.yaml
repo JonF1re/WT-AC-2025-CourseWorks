@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+data:
+  CORS_ORIGIN: "http://app-dev.local"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  VITE_API_BASE_URL: "http://app-dev.local/api"

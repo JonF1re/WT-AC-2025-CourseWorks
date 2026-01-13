@@ -1,0 +1,30 @@
+{
+  "name": "wt-ac-2025-courseworks-task-02",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Full-stack course project scaffold (variant 40)",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @app/server --filter @app/web dev",
+    "dev:server": "pnpm --filter @app/server dev",
+    "dev:web": "pnpm --filter @app/web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm --filter @app/server test",
+    "test:e2e": "pnpm --filter @app/web test:e2e",
+    "test:all": "pnpm test:unit && pnpm test:e2e",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "k8s:apply:dev": "kubectl apply -k k8s/overlays/dev",
+    "k8s:delete:dev": "kubectl delete -k k8s/overlays/dev",
+    "k8s:status:dev": "kubectl get pods,svc,ingress -n app-dev",
+    "k8s:apply:prod": "kubectl apply -k k8s/overlays/prod",
+    "k8s:delete:prod": "kubectl delete -k k8s/overlays/prod",
+    "k8s:status:prod": "kubectl get pods,svc,ingress -n app-prod"
+  },
+  "packageManager": "pnpm@8.15.4"
+}

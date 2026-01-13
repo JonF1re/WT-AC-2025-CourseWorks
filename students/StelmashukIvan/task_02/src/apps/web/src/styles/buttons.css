@@ -1,0 +1,27 @@
+button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button.danger {
+  background: var(--critical);
+}
+
+button.secondary {
+  background: #374151;
+}
+
+.button-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

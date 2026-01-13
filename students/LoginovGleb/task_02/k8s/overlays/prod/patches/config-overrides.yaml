@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+data:
+  CORS_ORIGIN: "https://app.example.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  VITE_API_BASE_URL: "https://app.example.com/api"

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: server
+    component: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+        component: backend
+    spec:
+      containers:
+      - name: server
+        image: smart-home-server:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: server-secret
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: server-secret
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: server-secret
+              key: jwt-secret
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: server-config
+              key: node-env
+        - name: PORT
+          value: "3000"
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: server-config
+              key: cors-origins
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                echo "Running database migrations..."
+                npx prisma migrate deploy
+                echo "Migrations completed"
+        volumeMounts:
+        - name: swagger-volume
+          mountPath: /app/dist/swagger.json
+          subPath: swagger.json
+      volumes:
+      - name: swagger-volume
+        configMap:
+          name: swagger-config

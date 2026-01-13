@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- htmlhint disable doctype-first -->
+<div class="row">
+  <div class="col-md-8">
+    <h2 id="metric-name">Метрика</h2>
+    <canvas id="chart" height="150"></canvas>
+    <hr>
+    <h4>Записи</h4>
+    <ul id="entries" class="list-group"></ul>
+    <hr>
+    <form id="entry-form" class="row g-2">
+      <div class="col-auto">
+        <input class="form-control" name="value" placeholder="value">
+      </div>
+      <div class="col-auto">
+        <input class="form-control" name="date" type="date">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary">Добавить запись</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+const metricId = new URLSearchParams(location.search).get('id');
+if(!metricId){ alert('metric id required'); location='/dashboard.html'; }
+
+async function api(path, opts={}){
+  opts.headers = opts.headers || {};
+  const token = localStorage.getItem('token');
+  if(token) opts.headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch('/api/v1'+path, opts);
+  if(res.status===401){ alert('unauthorized'); location='/login.html'; throw 'unauth'; }
+  return res.json();
+}
+
+let chart;
+async function load(){
+  const m = await api(`/metrics/${metricId}`);
+  document.getElementById('metric-name').textContent = m.name;
+  const rpt = await api(`/reports?metric_id=${metricId}`);
+  const labels = rpt.entries.map(e=>e.date);
+  const data = rpt.entries.map(e=>e.value);
+  const ctx = document.getElementById('chart').getContext('2d');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {type:'line', data:{labels, datasets:[{label:m.name, data, borderColor:'#007bff', tension:0.2}]}});
+
+  const list = document.getElementById('entries'); list.innerHTML='';
+  for(const e of (await api(`/metrics/${metricId}/entries`))){
+    const li = document.createElement('li'); li.className='list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `<span>${e.date}: ${e.value} ${m.unit||''}</span><small>${e.note||''}</small>`;
+    list.appendChild(li);
+  }
+}
+
+document.getElementById('entry-form').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const v = ev.target.value.value; 
+  const d = ev.target.date.value || new Date().toISOString().slice(0,10);
+  await api('/entries', {
+    method:'POST', 
+    headers:{'Content-Type':'application/json'}, 
+    body: JSON.stringify({
+      metric_id: metricId, 
+      value: parseFloat(v), 
+      date: d
+    })
+  });
+  load();
+});
+
+load();
+</script>
+{% endblock %}

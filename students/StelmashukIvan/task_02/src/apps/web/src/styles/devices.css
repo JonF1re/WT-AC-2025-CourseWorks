@@ -1,0 +1,270 @@
+.devices-page {
+  padding: 24px;
+}
+
+.devices-header {
+  margin-bottom: 32px;
+}
+
+.devices-header-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.devices-header-subtitle {
+  color: var(--muted);
+  margin: 0;
+  font-size: 14px;
+}
+
+.devices-form-card {
+  margin-bottom: 32px;
+}
+
+.devices-form-title {
+  margin: 0 0 20px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editing-badge {
+  background: rgb(59 130 246 / 20%);
+  color: #3b82f6;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.devices-form {
+  display: grid;
+  gap: 20px;
+}
+
+.devices-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.devices-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.submit-button {
+  position: relative;
+  min-width: 180px;
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.submit-button-text-hidden {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid rgb(255 255 255 / 30%);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-small {
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.devices-list-card {
+  margin-top: 24px;
+}
+
+.devices-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.devices-list-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.devices-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.devices-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.devices-table-header {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--bg);
+  background: rgb(255 255 255 / 5%);
+}
+
+.devices-table-header-name {
+  width: 25%;
+}
+
+.devices-table-header-description {
+  width: 35%;
+}
+
+.devices-table-header-owner {
+  width: 25%;
+}
+
+.devices-table-header-actions {
+  width: 15%;
+  text-align: right;
+}
+
+.device-row {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  background: transparent;
+  transition: var(--transition);
+}
+
+.device-row:hover {
+  background: rgb(255 255 255 / 3%);
+}
+
+.device-name,
+.device-description,
+.device-owner,
+.device-actions {
+  padding: 16px;
+  vertical-align: middle;
+}
+
+.device-name-text {
+  font-weight: 500;
+}
+
+.device-description-text {
+  color: var(--text);
+}
+
+.device-description-text-empty {
+  color: var(--muted);
+}
+
+.device-owner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.device-owner-name {
+  font-weight: 500;
+}
+
+.owner-role-badge {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  align-self: flex-start;
+  background: rgb(156 163 175 / 20%);
+  color: var(--muted);
+}
+
+.owner-role-badge-admin {
+  background: rgb(59 130 246 / 20%);
+  color: #3b82f6;
+}
+
+.device-actions {
+  text-align: right;
+}
+
+.device-actions-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.device-action-button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.loading-placeholder,
+.empty-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+@media (width <= 768px) {
+  .devices-form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .devices-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .devices-list-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .devices-table {
+    font-size: 13px;
+  }
+  
+  .devices-table-header,
+  .device-name,
+  .device-description,
+  .device-owner,
+  .device-actions {
+    padding: 12px 8px;
+  }
+  
+  .device-actions-buttons {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  
+  .device-action-button {
+    width: 100%;
+  }
+  
+  .submit-button {
+    min-width: 100%;
+  }
+}

@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-platform-api
+  namespace: quiz-platform
+  labels:
+    app: quiz-platform
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quiz-platform
+      component: api
+  template:
+    metadata:
+      labels:
+        app: quiz-platform
+        component: api
+    spec:
+      containers:
+      - name: api
+        image: quiz-platform-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: quiz-platform-secrets
+              key: database-url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: quiz-platform-secrets
+              key: secret-key
+        - name: REDIS_URL
+          value: "redis://quiz-platform-redis:6379/0"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-platform-frontend
+  namespace: quiz-platform
+  labels:
+    app: quiz-platform
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quiz-platform
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: quiz-platform
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: quiz-platform-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

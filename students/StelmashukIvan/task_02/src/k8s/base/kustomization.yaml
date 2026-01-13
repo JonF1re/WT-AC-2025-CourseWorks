@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: smart-home
+
+resources:
+  # Database
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/persistentvolumeclaim.yaml
+  
+  # Cache
+  - redis/deployment.yaml
+  - redis/service.yaml
+  
+  # Backend
+  - server/deployment.yaml
+  - server/service.yaml
+  - server/configmap.yaml
+  
+  # Frontend
+  - web/deployment.yaml
+  - web/service.yaml
+  - web/configmap.yaml
+  
+  # Networking
+  - ingress.yaml
+
+commonLabels:
+  app: smart-home
+  part-of: monitoring-system
+  managed-by: kustomize
+
+images:
+  - name: smart-home-server
+    newName: your-registry/smart-home-server
+    newTag: latest
+  - name: smart-home-web
+    newName: your-registry/smart-home-web
+    newTag: latest

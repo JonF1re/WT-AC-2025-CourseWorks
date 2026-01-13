@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: micro-twitter-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: micro_twitter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - micro-twitter-network
+
+  server:
+    build:
+      context: ./src/apps/server
+      dockerfile: Dockerfile
+    container_name: micro-twitter-server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/micro_twitter
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    networks:
+      - micro-twitter-network
+    volumes:
+      - ./src/apps/server/src:/app/src
+      - ./src/apps/server/prisma:/app/prisma
+
+  web:
+    build:
+      context: ./src/apps/web
+      dockerfile: Dockerfile
+    container_name: micro-twitter-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+    networks:
+      - micro-twitter-network
+
+volumes:
+  postgres_data:
+
+networks:
+  micro-twitter-network:
+    driver: bridge

@@ -1,0 +1,78 @@
+:root {
+  --brand: #1EA7FF;
+  --muted: #6B7280;
+  --bg: #f8fafc;
+}
+
+body {
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 60%);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: var(--brand) !important;
+}
+
+.container {
+  max-width: 1100px;
+}
+
+.card {
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgb(15 23 42 / 6%);
+}
+
+h1,h2,h3,h4 {
+  color: #0f172a;
+}
+
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.progress {
+  height: 14px;
+  background: #eef2f7;
+  border-radius: 10px;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, var(--brand), #0ea5e9);
+}
+
+.hero {
+  padding: 48px 0;
+  margin-bottom: 24px;
+}
+
+.footer {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 24px 0;
+}
+
+.card .btn-outline-primary {
+  border-radius: 8px;
+}
+
+.form-control {
+  border-radius: 8px;
+}
+
+.list-group-item {
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.small-muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (width <= 576px) {
+  .container {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,2 @@
+# Do not commit real production secrets
+secrets.yaml

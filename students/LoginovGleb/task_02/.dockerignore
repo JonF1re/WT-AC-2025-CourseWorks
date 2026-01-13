@@ -1,0 +1,70 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+build
+**/build
+coverage
+**/coverage
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs
+
+# Git
+.git
+.gitignore
+.github
+
+# CI/CD and Infrastructure
+k8s
+**/k8s
+.github
+**/.github
+
+# Testing
+tests
+**/tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+.playwright
+playwright-report
+test-results
+**/.playwright
+**/playwright-report
+**/test-results
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation (not needed in runtime)
+docs
+**/README.md
+**/*.md
+!package.json
+
+# Temporary files
+tmp
+temp
+*.tmp

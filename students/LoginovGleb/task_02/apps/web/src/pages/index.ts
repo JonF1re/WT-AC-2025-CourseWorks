@@ -1,0 +1,11 @@
+export { LoginPage } from './LoginPage';
+export { RegisterPage } from './RegisterPage';
+export { ApplicationsPage } from './ApplicationsPage';
+export { ApplicationDetailPage } from './ApplicationDetailPage';
+export { ApplicationFormPage } from './ApplicationFormPage';
+export { FormsPage } from './FormsPage';
+export { FormDetailPage } from './FormDetailPage';
+export { FormFormPage } from './FormFormPage';
+export { StatusesPage } from './StatusesPage';
+export { AdminPage } from './AdminPage';
+export { NotFoundPage } from './NotFoundPage';

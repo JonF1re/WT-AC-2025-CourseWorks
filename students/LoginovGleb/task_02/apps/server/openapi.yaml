@@ -1,0 +1,1512 @@
+---
+openapi: 3.0.3
+info:
+  title: "Да, я в деле API (Variant 40)"
+  version: 1.0.0
+  description: |
+    REST API для системы заявок «Да, я в деле».
+
+    - JWT аутентификация (access token в заголовке Authorization)
+    - refresh token хранится в HttpOnly cookie (`refresh_token`)
+    - Роли: admin, moderator, user
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Auth
+  - name: Users
+  - name: Forms
+  - name: Statuses
+  - name: Applications
+  - name: Attachments
+  - name: Health
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+        data:
+          description: Полезная нагрузка
+          nullable: true
+    ApiError:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          example: error
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: validation_failed
+            message:
+              type: string
+              example: Validation failed
+            fields:
+              description: Структура ошибок Zod (при валидации)
+              type: object
+    UserRole:
+      type: string
+      enum: [admin, moderator, user]
+    User:
+      type: object
+      required: [id, email, username, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        createdAt:
+          type: string
+          format: date-time
+    AuthTokens:
+      type: object
+      required: [accessToken, user]
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token (передаётся в Authorization)
+        user:
+          $ref: '#/components/schemas/User'
+    Form:
+      type: object
+      required: [id, name, fields, isActive, createdById, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fields:
+          type: array
+          items: {}
+        isActive:
+          type: boolean
+        createdById:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Status:
+      type: object
+      required: [id, name, isFinal]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+          example: "#00aaff"
+        order:
+          type: integer
+          nullable: true
+        isFinal:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      required: [id, applicationId, filename, filePath, fileSize, mimeType, uploadedById, uploadedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        filePath:
+          type: string
+        fileSize:
+          type: integer
+          example: 102400
+        mimeType:
+          type: string
+          example: application/pdf
+        uploadedById:
+          type: string
+          format: uuid
+        uploadedAt:
+          type: string
+          format: date-time
+    StatusHistory:
+      type: object
+      required: [id, applicationId, toStatusId, changedById, changedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        fromStatusId:
+          type: string
+          format: uuid
+          nullable: true
+        toStatusId:
+          type: string
+          format: uuid
+        changedById:
+          type: string
+          format: uuid
+        changedAt:
+          type: string
+          format: date-time
+        comment:
+          type: string
+          nullable: true
+        fromStatus:
+          allOf:
+            - $ref: '#/components/schemas/Status'
+            - nullable: true
+        toStatus:
+          $ref: '#/components/schemas/Status'
+        changedBy:
+          $ref: '#/components/schemas/User'
+    Application:
+      type: object
+      required: [id, formId, userId, statusId, data, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        formId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        statusId:
+          type: string
+          format: uuid
+        data:
+          type: object
+          additionalProperties: true
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ApplicationListItem:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            form:
+              $ref: '#/components/schemas/Form'
+            status:
+              $ref: '#/components/schemas/Status'
+    ApplicationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            form:
+              $ref: '#/components/schemas/Form'
+            status:
+              $ref: '#/components/schemas/Status'
+            user:
+              $ref: '#/components/schemas/User'
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attachment'
+            history:
+              type: array
+              items:
+                $ref: '#/components/schemas/StatusHistory'
+    Pagination:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+    RegisterRequest:
+      type: object
+      required: [email, username, password]
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        password:
+          type: string
+          format: password
+          minLength: 8
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    FormCreateRequest:
+      type: object
+      required: [name, fields]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fields:
+          type: array
+          items: {}
+        isActive:
+          type: boolean
+    FormUpdateRequest:
+      type: object
+      description: Любое поле может быть опущено.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fields:
+          type: array
+          items: {}
+        isActive:
+          type: boolean
+    StatusCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+          example: "#00aaff"
+        order:
+          type: integer
+          nullable: true
+        isFinal:
+          type: boolean
+    StatusUpdateRequest:
+      type: object
+      description: Любое поле может быть опущено.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+          example: "#00aaff"
+        order:
+          type: integer
+          nullable: true
+        isFinal:
+          type: boolean
+    ApplicationCreateRequest:
+      type: object
+      required: [formId, data]
+      properties:
+        formId:
+          type: string
+          format: uuid
+        data:
+          type: object
+          additionalProperties: true
+        comment:
+          type: string
+          nullable: true
+    ApplicationUpdateRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+        comment:
+          type: string
+          nullable: true
+    ApplicationStatusChangeRequest:
+      type: object
+      required: [statusId]
+      properties:
+        statusId:
+          type: string
+          format: uuid
+        comment:
+          type: string
+          nullable: true
+    ApplicationWithdrawRequest:
+      type: object
+      properties:
+        comment:
+          type: string
+          nullable: true
+    AttachmentCreateRequest:
+      type: object
+      required: [applicationId, filename, mimeType, fileSize]
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        mimeType:
+          type: string
+          enum:
+            - application/pdf
+            - application/msword
+            - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+            - image/jpeg
+            - image/png
+        fileSize:
+          type: integer
+          description: Размер файла в байтах (до 10 МБ)
+        filePath:
+          type: string
+          nullable: true
+          description: Устанавливается на сервере
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              examples:
+                ok:
+                  value:
+                    status: ok
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness check (DB)
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                ready:
+                  value:
+                    status: ready
+        "503":
+          description: Database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                db_unavailable:
+                  value:
+                    status: error
+                    error:
+                      code: db_unavailable
+                      message: Database not reachable
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              username: newuser
+              password: Pass1234!
+      responses:
+        "201":
+          description: Registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthTokens'
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and obtain tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@example.com
+              password: admin123!
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthTokens'
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token using HttpOnly refresh cookie
+      responses:
+        "200":
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthTokens'
+        "401":
+          description: Missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and revoke refresh token
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /forms:
+    get:
+      tags: [Forms]
+      summary: List forms
+      description: Публично возвращает только активные формы. Авторизованный admin видит все формы.
+      parameters:
+        - in: query
+          name: isActive
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Фильтр активности (учитывается только для admin/moderator)
+      responses:
+        "200":
+          description: Forms list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Form'
+    post:
+      tags: [Forms]
+      summary: Create form
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormCreateRequest'
+      responses:
+        "201":
+          description: Form created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Form'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /forms/{id}:
+    get:
+      tags: [Forms]
+      summary: Get form by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Form
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Form'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [Forms]
+      summary: Update form
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormUpdateRequest'
+      responses:
+        "200":
+          description: Form updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Form'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [Forms]
+      summary: Delete form
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /statuses:
+    get:
+      tags: [Statuses]
+      summary: List statuses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Statuses
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Status'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [Statuses]
+      summary: Create status
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusCreateRequest'
+      responses:
+        "201":
+          description: Status created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Status'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /statuses/{id}:
+    get:
+      tags: [Statuses]
+      summary: Get status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Status'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [Statuses]
+      summary: Update status
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusUpdateRequest'
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Status'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [Statuses]
+      summary: Delete status
+      security:
+        - bearerAuth: []
+      description: Только admin.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List applications
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: statusId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: formId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: userId
+          schema:
+            type: string
+            format: uuid
+          description: Доступно только для admin/moderator
+        - in: query
+          name: page
+          schema:
+            type: string
+            example: "1"
+        - in: query
+          name: pageSize
+          schema:
+            type: string
+            example: "20"
+      responses:
+        "200":
+          description: Applications page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [items, page, pageSize, total]
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ApplicationListItem'
+                          page:
+                            type: integer
+                          pageSize:
+                            type: integer
+                          total:
+                            type: integer
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [Applications]
+      summary: Create application
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCreateRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        "400":
+          description: Validation or business error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get application details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Application details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ApplicationDetail'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [Applications]
+      summary: Update application (draft)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationUpdateRequest'
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        "400":
+          description: Validation or business error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [Applications]
+      summary: Delete draft application
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /applications/{id}/submit:
+    post:
+      tags: [Applications]
+      summary: Submit draft application
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /applications/{id}/status:
+    put:
+      tags: [Applications]
+      summary: Change application status
+      description: Только admin или moderator.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusChangeRequest'
+      responses:
+        "200":
+          description: Status changed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        "400":
+          description: Invalid status or validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /applications/{id}/withdraw:
+    post:
+      tags: [Applications]
+      summary: Withdraw application
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationWithdrawRequest'
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        "400":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /attachments:
+    get:
+      tags: [Attachments]
+      summary: List attachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: applicationId
+          schema:
+            type: string
+            format: uuid
+          description: Требуется для обычных пользователей
+      responses:
+        "200":
+          description: Attachments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Attachment'
+        "400":
+          description: Missing applicationId for user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [Attachments]
+      summary: Create attachment metadata
+      description: Только владелец заявки или admin. Модератор не может добавлять вложения.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentCreateRequest'
+      responses:
+        "201":
+          description: Attachment created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Attachment'
+        "400":
+          description: Validation or limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /attachments/{id}:
+    get:
+      tags: [Attachments]
+      summary: Get attachment metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Attachment
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Attachment'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [Attachments]
+      summary: Delete attachment
+      description: Только владелец заявки или admin, только в статусе draft.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'

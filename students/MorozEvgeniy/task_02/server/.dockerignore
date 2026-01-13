@@ -1,0 +1,21 @@
+﻿# Dependencies
+node_modules
+.pnpm
+.pnpm-store
+
+# Build artifacts
+dist
+coverage
+
+# Git
+.git
+.gitignore
+
+# Env (секреты)
+.env
+.env.*
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store

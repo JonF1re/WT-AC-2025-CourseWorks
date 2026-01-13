@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  username      String   @unique
+  password_hash String
+  role          String   // enum: admin, user
+  devices       Device[]
+  tickets       Ticket[]
+
+  @@map("users")
+}
+
+model Device {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  location    String?
+  type        String?
+  owner_id    String   @db.Uuid
+  owner       User     @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  metrics     Metric[]
+  tickets     Ticket[]
+
+  @@map("devices")
+}
+
+model Metric {
+  id        String      @id @default(uuid()) @db.Uuid
+  device_id String      @db.Uuid
+  device    Device      @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  name      String
+  unit      String
+  readings  Reading[]
+  alerts    Alert[]
+  alertRules AlertRule[]
+
+  @@map("metrics")
+}
+
+model Reading {
+  id         String   @id @default(uuid()) @db.Uuid
+  metric_id  String   @db.Uuid
+  metric     Metric   @relation(fields: [metric_id], references: [id], onDelete: Cascade)
+  timestamp  DateTime @db.Timestamp(6)
+  value      Float
+  alerts     Alert[]
+
+  @@map("readings")
+}
+
+model Alert {
+  id         String   @id @default(uuid()) @db.Uuid
+  metric_id  String   @db.Uuid
+  metric     Metric   @relation(fields: [metric_id], references: [id], onDelete: Cascade)
+  reading_id String?  @db.Uuid
+  reading    Reading? @relation(fields: [reading_id], references: [id])
+  level      String   // enum: info, warning, critical
+  status     String   // enum: new, acknowledged, closed
+  threshold  Float?
+  message    String
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("alerts")
+}
+
+model Ticket {
+  id            String  @id @default(uuid()) @db.Uuid
+  type          String  // enum: add, edit, delete
+  status        String
+  object        String? // enum: user, device, metric
+  comment       String? @db.Text
+  requester_id  String  @db.Uuid
+  requester     User    @relation(fields: [requester_id], references: [id])
+  device_id     String? @db.Uuid
+  device        Device? @relation(fields: [device_id], references: [id])
+
+  @@map("tickets")
+}
+
+model AlertRule {
+  id                String  @id @default(uuid()) @db.Uuid
+  metric_id         String  @db.Uuid
+  metric            Metric  @relation(fields: [metric_id], references: [id], onDelete: Cascade)
+  condition         String  // e.g., ">", "<", "=="
+  threshold         Float
+  level             String  // info, warning, critical
+  message_template  String
+
+  @@map("alert_rules")
+}

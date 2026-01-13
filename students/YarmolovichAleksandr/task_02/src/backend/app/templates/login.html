@@ -1,0 +1,16 @@
+<!-- htmlhint doctype-first:false -->
+{% extends 'base.html' %}
+{% block content %}
+<h1>Login</h1>
+<form id="login-form">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input class="form-control" id="email" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" class="form-control" id="password" required>
+  </div>
+  <button class="btn btn-primary" type="submit">Login</button>
+</form>
+{% endblock %}

@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Platform - Проверим быстро!</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen font-sans">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <nav class="bg-white shadow-lg rounded-2xl p-6 mb-8">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 text-white p-3 rounded-xl">
+                        <i class="fas fa-brain text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">QuizPlatform</h1>
+                        <p class="text-gray-600 text-sm">Проверяем знания быстро и эффективно</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4" v-if="user">
+                    <div class="text-right">
+                        <div class="font-medium text-gray-800">{{ user.full_name || user.username }}</div>
+                        <div class="text-sm" :class="user.role === 'admin' ? 'text-purple-600' : 'text-green-600'">
+                            {{ user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь' }}
+                        </div>
+                    </div>
+                    <button @click="logout" class="btn-secondary">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="grid grid-cols-1 lg-grid-cols-4 gap-8">
+            <div class="lg-col-span-1">
+                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Меню</h2>
+                    
+                    <nav class="space-y-2">
+                        <button @click="currentView = 'quizzes'" 
+                                :class="['nav-btn', currentView === 'quizzes' ? 'nav-btn-active' : '']">
+                            <i class="fas fa-list mr-3"></i>Все квизы
+                        </button>
+                        
+                        <button @click="currentView = 'myAttempts'" 
+                                :class="['nav-btn', currentView === 'myAttempts' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-history mr-3"></i>Мои попытки
+                        </button>
+                        
+                        <button @click="currentView = 'stats'" 
+                                :class="['nav-btn', currentView === 'stats' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-chart-bar mr-3"></i>Статистика
+                        </button>
+                        
+                        <button @click="currentView = 'achievements'" 
+                                :class="['nav-btn', currentView === 'achievements' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-trophy mr-3"></i>Достижения
+                        </button>
+                        
+                        <button @click="currentView = 'certificates'" 
+                                :class="['nav-btn', currentView === 'certificates' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-certificate mr-3"></i>Сертификаты
+                        </button>
+                        
+                        <button @click="currentView = 'leaderboard'" 
+                                :class="['nav-btn', currentView === 'leaderboard' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-chart-line mr-3"></i>Таблица лидеров
+                        </button>
+                        
+                        <button @click="currentView = 'export'" 
+                                :class="['nav-btn', currentView === 'export' ? 'nav-btn-active' : '']"
+                                v-if="user">
+                            <i class="fas fa-download mr-3"></i>Экспорт
+                        </button>
+                        
+                        <button @click="currentView = 'createQuiz'" 
+                                :class="['nav-btn', currentView === 'createQuiz' ? 'nav-btn-active' : '']"
+                                v-if="user && user.role === 'admin'">
+                            <i class="fas fa-plus-circle mr-3"></i>Создать квиз
+                        </button>
+                        
+                        <button @click="currentView = 'questionBanks'" 
+                                :class="['nav-btn', currentView === 'questionBanks' ? 'nav-btn-active' : '']"
+                                v-if="user && user.role === 'admin'">
+                            <i class="fas fa-database mr-3"></i>Банки вопросов
+                        </button>
+                        
+                        <div class="pt-6 border-t">
+                            <div class="text-sm text-gray-500 mb-2">Текущий сеанс</div>
+                            <div class="text-sm" v-if="user">
+                                <div class="flex justify-between py-1">
+                                    <span class="text-gray-600">Попыток:</span>
+                                    <span class="font-medium">{{ userStats.total_attempts || 0 }}</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span class="text-gray-600">Достижений:</span>
+                                    <span class="font-medium">{{ userAchievements.length || 0 }}</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span class="text-gray-600">Сертификатов:</span>
+                                    <span class="font-medium">{{ certificates.length || 0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="lg-col-span-3">
+                <div v-if="!user" class="bg-white rounded-2xl shadow-lg p-8">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Добро пожаловать!</h2>
+                        <p class="text-gray-600">Войдите или зарегистрируйтесь, чтобы начать прохождение квизов</p>
+                    </div>
+                    
+                    <div class="grid md-grid-cols-2 gap-8">
+                        <div class="bg-gray-50 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold text-gray-800 mb-6">Вход в систему</h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input v-model="loginEmail" type="email" 
+                                           class="input-field" 
+                                           placeholder="admin@quiz.com">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                                    <input v-model="loginPassword" type="password" 
+                                           class="input-field" 
+                                           placeholder="admin123">
+                                </div>
+                                
+                                <div class="flex space-x-3">
+                                    <button @click="quickLogin('admin')" class="quick-btn bg-indigo-100 text-indigo-700">
+                                        <i class="fas fa-crown mr-2"></i>Админ
+                                    </button>
+                                    <button @click="quickLogin('user')" class="quick-btn bg-blue-100 text-blue-700">
+                                        <i class="fas fa-user mr-2"></i>Пользователь
+                                    </button>
+                                </div>
+                                
+                                <button @click="login" class="btn-primary w-full">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold text-gray-800 mb-6">Регистрация</h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input v-model="registerEmail" type="email" 
+                                           class="input-field" 
+                                           placeholder="user@example.com">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Имя пользователя</label>
+                                    <input v-model="registerUsername" type="text" 
+                                           class="input-field" 
+                                           placeholder="username">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Полное имя</label>
+                                    <input v-model="registerFullName" type="text" 
+                                           class="input-field" 
+                                           placeholder="Иван Иванов">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                                    <input v-model="registerPassword" type="password" 
+                                           class="input-field" 
+                                           placeholder="Минимум 6 символов">
+                                </div>
+                                
+                                <button @click="register" class="btn-secondary w-full">
+                                    <i class="fas fa-user-plus mr-2"></i>Зарегистрироваться
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'quizzes'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Доступные квизы</h2>
+                                <p class="text-gray-600">Выберите квиз для прохождения</p>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                    <input v-model="quizSearch" 
+                                           type="text" 
+                                           placeholder="Поиск квизов..." 
+                                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <button @click="setQuizFilter('all')" 
+                                    :class="['filter-btn', quizFilter === 'all' ? 'filter-btn-active' : '']">
+                                Все
+                            </button>
+                            <button @click="setQuizFilter('active')" 
+                                    :class="['filter-btn', quizFilter === 'active' ? 'filter-btn-active' : '']">
+                                Активные
+                            </button>
+                            <button @click="setQuizFilter('my')" 
+                                    :class="['filter-btn', quizFilter === 'my' ? 'filter-btn-active' : '']"
+                                    v-if="user.role === 'admin'">
+                                Мои квизы
+                            </button>
+                        </div>
+                        
+                        <div class="grid md-grid-cols-2 gap-6">
+                            <div v-for="quiz in filteredQuizzes" :key="quiz.id" 
+                                 class="quiz-card hover-shadow-xl transition-shadow duration-300 fade-in">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ quiz.title }}</h3>
+                                        <p class="text-gray-600 text-sm mb-4">{{ quiz.description || 'Без описания' }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
+                                        {{ quiz.questions_count }} вопросов
+                                    </span>
+                                </div>
+                                
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="flex items-center text-gray-600">
+                                        <i class="fas fa-clock mr-2"></i>
+                                        <span>{{ quiz.time_limit_minutes }} мин</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600">
+                                        <i class="fas fa-star mr-2"></i>
+                                        <span>{{ quiz.total_points }} баллов</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center">
+                                    <button @click.prevent="startQuiz(quiz)" class="btn-primary">
+                                        <i class="fas fa-play mr-2"></i>Начать
+                                    </button>
+                                    
+                                    <div class="text-sm text-gray-500">
+                                        <i class="far fa-calendar mr-1"></i>
+                                        {{ new Date(quiz.created_at).toLocaleDateString() }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="filteredQuizzes.length === 0" class="text-center py-12">
+                            <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600 mb-2">Квизы не найдены</h3>
+                            <p class="text-gray-500">Попробуйте изменить фильтры или создать новый квиз</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentView === 'quizTaking'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="mb-8">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-2xl font-bold text-gray-800">{{ currentQuiz.title }}</h2>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold" :class="timeLeft < 60 ? 'text-red-600' : 'text-gray-800'">
+                                        <i class="fas fa-clock mr-2"></i>
+                                        {{ formatTime(timeLeft) }}
+                                    </div>
+                                    <div class="text-sm text-gray-600">Осталось времени</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Вопрос {{ currentQuestionIndex + 1 }} из {{ currentQuiz.questions.length }}</span>
+                                    <span>{{ Math.round((currentQuestionIndex + 1) / currentQuiz.questions.length * 100) }}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" :style="{ width: ((currentQuestionIndex + 1) / currentQuiz.questions.length * 100) + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="currentQuestion" class="mb-8">
+                            <div class="bg-gray-50 p-6 rounded-xl mb-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-medium text-gray-800">Вопрос {{ currentQuestionIndex + 1 }}</h3>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                                        {{ currentQuestion.points }} баллов
+                                    </span>
+                                </div>
+                                <p class="text-gray-700 text-lg">{{ currentQuestion.text }}</p>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div v-for="option in currentQuestion.options" :key="option.id"
+                                     @click="selectOption(option.id)"
+                                     :class="['option-card', selectedOption === option.id ? 'option-card-selected' : '']">
+                                    <div class="flex items-center">
+                                        <div class="option-radio">
+                                            <div class="option-radio-inner" v-if="selectedOption === option.id"></div>
+                                        </div>
+                                        <span class="ml-4">{{ option.text }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between pt-6 border-t">
+                            <button @click="prevQuestion" 
+                                    :disabled="currentQuestionIndex === 0"
+                                    class="btn-secondary" 
+                                    :class="{ 'opacity-50 cursor-not-allowed': currentQuestionIndex === 0 }">
+                                <i class="fas fa-arrow-left mr-2"></i>Назад
+                            </button>
+                            
+                            <div class="flex space-x-3">
+                                <button v-if="currentQuestionIndex < currentQuiz.questions.length - 1"
+                                        @click="nextQuestion"
+                                        class="btn-primary">
+                                    Следующий вопрос <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                                
+                                <button v-if="currentQuestionIndex === currentQuiz.questions.length - 1"
+                                        @click="submitQuiz"
+                                        class="btn-success">
+                                    <i class="fas fa-check-circle mr-2"></i>Завершить квиз
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentView === 'quizResult'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="text-center mb-8">
+                            <div class="inline-block p-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mb-4">
+                                <i class="fas fa-trophy text-4xl text-white"></i>
+                            </div>
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Квиз завершен!</h2>
+                            <p class="text-gray-600">{{ currentQuiz.title }}</p>
+                        </div>
+                        
+                        <div class="grid md-grid-cols-4 gap-6 mb-8">
+                            <div class="stat-card">
+                                <div class="stat-value">{{ quizResult.total_points }}/{{ quizResult.max_points }}</div>
+                                <div class="stat-label">Баллы</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-value" :class="getPercentageColor(quizResult.total_points / quizResult.max_points * 100)">
+                                    {{ Math.round(quizResult.total_points / quizResult.max_points * 100) }}%
+                                </div>
+                                <div class="stat-label">Результат</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-value">{{ formatTime(quizResult.time_spent_seconds || 0) }}</div>
+                                <div class="stat-label">Время</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-value">
+                                    {{ new Date(quizResult.finished_at).toLocaleTimeString() }}
+                                </div>
+                                <div class="stat-label">Завершен</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Детали результатов</h3>
+                            <div class="space-y-4">
+                                <div v-for="(answer, index) in quizResult.answers" :key="answer.id"
+                                     class="p-4 rounded-lg border" 
+                                     :class="answer.is_correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="font-medium text-gray-800">Вопрос {{ index + 1 }}</div>
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 text-xs font-medium rounded"
+                                                  :class="answer.is_correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                                {{ answer.points_earned }}/{{ getQuestionPoints(answer.question_id) }} баллов
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm" :class="answer.is_correct ? 'text-green-700' : 'text-red-700'">
+                                        <i class="fas fa-check mr-1" v-if="answer.is_correct"></i>
+                                        <i class="fas fa-times mr-1" v-else></i>
+                                        {{ answer.is_correct ? 'Правильно' : 'Неправильно' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center space-x-4 pt-6 border-t">
+                            <button @click="currentView = 'quizzes'" class="btn-secondary">
+                                <i class="fas fa-list mr-2"></i>К списку квизов
+                            </button>
+                            <button @click="currentView = 'myAttempts'" class="btn-secondary">
+                                <i class="fas fa-history mr-2"></i>Мои попытки
+                            </button>
+                            
+                            <button @click="exportSingleResult(quizResult.id)" class="btn-primary">
+                                <i class="fas fa-download mr-2"></i>Экспорт результата
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'myAttempts'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Мои попытки</h2>
+                        
+                        <div class="space-y-4">
+                            <div v-for="attempt in userAttempts" :key="attempt.id"
+                                 class="attempt-card hover-shadow-md transition-shadow duration-300 fade-in">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 mb-1">{{ getQuizTitle(attempt.quiz_id) }}</h3>
+                                        <div class="flex items-center text-sm text-gray-600 mb-2">
+                                            <i class="far fa-clock mr-2"></i>
+                                            {{ formatDate(attempt.started_at) }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold mb-1">
+                                            {{ attempt.total_points }}/{{ attempt.max_points }}
+                                            <span class="text-sm font-normal">баллов</span>
+                                        </div>
+                                        <div class="text-sm" :class="getPercentageColor(attempt.total_points / attempt.max_points * 100)">
+                                            {{ Math.round(attempt.total_points / attempt.max_points * 100) }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t">
+                                    <div class="text-sm text-gray-600">
+                                        <i class="fas fa-stopwatch mr-1"></i>
+                                        Время: {{ formatTime(attempt.time_spent_seconds || 0) }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 flex space-x-2">
+                                    <button @click="viewAttemptResult(attempt.id)" class="btn-secondary text-sm">
+                                        <i class="fas fa-eye mr-1"></i>Подробнее
+                                    </button>
+                                    <button @click="generateCertificate(attempt.id)" 
+                                            class="btn-primary text-sm"
+                                            v-if="attempt.total_points / attempt.max_points >= 0.7 && !certificates.find(c => c.quiz_title === getQuizTitle(attempt.quiz_id))">
+                                        <i class="fas fa-certificate mr-1"></i>Создать сертификат
+                                    </button>
+                                    <span v-else-if="attempt.total_points / attempt.max_points >= 0.7 && certificates.find(c => c.quiz_title === getQuizTitle(attempt.quiz_id))"
+                                          class="text-sm text-green-600 flex items-center">
+                                        <i class="fas fa-check-circle mr-1"></i>Сертификат есть
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="userAttempts.length === 0" class="text-center py-12">
+                            <i class="fas fa-history text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600 mb-2">Нет завершенных попыток</h3>
+                            <p class="text-gray-500 mb-6">Начните прохождение квиза, чтобы увидеть здесь результаты</p>
+                            <button @click="currentView = 'quizzes'" class="btn-primary">
+                                <i class="fas fa-play mr-2"></i>Начать квиз
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'stats'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Моя статистика</h2>
+                        
+                        <div class="grid md-grid-cols-2 lg-grid-cols-4 gap-6 mb-8">
+                            <div class="stat-card bg-gradient-to-br from-indigo-50 to-purple-50">
+                                <div class="stat-value text-indigo-600">{{ userStats.total_attempts || 0 }}</div>
+                                <div class="stat-label">Всего попыток</div>
+                            </div>
+                            
+                            <div class="stat-card bg-gradient-to-br from-green-50 to-teal-50">
+                                <div class="stat-value text-green-600">{{ userStats.avg_score || 0 }}%</div>
+                                <div class="stat-label">Средний результат</div>
+                            </div>
+                            
+                            <div class="stat-card bg-gradient-to-br from-blue-50 to-cyan-50">
+                                <div class="stat-value text-blue-600">{{ userStats.total_quizzes || 0 }}</div>
+                                <div class="stat-label">Пройдено квизов</div>
+                            </div>
+                            
+                            <div class="stat-card bg-gradient-to-br from-yellow-50 to-orange-50">
+                                <div class="stat-value text-yellow-600">{{ userStats.best_score || 0 }}%</div>
+                                <div class="stat-label">Лучший результат</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Мои достижения</h3>
+                            <div class="grid md-grid-cols-2 lg-grid-cols-3 gap-4">
+                                <div v-for="achievement in userAchievements.slice(0, 6)" :key="achievement.id"
+                                     class="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border border-yellow-200 shadow-hover fade-in">
+                                    <div class="flex items-start">
+                                        <div class="bg-yellow-100 p-3 rounded-lg mr-4">
+                                            <i class="fas fa-trophy text-yellow-600 text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 mb-1">{{ achievement.achievement.name }}</h4>
+                                            <p class="text-sm text-gray-600 mb-2">{{ achievement.achievement.description }}</p>
+                                            <div class="text-xs text-gray-500">
+                                                Получено: {{ formatDate(achievement.earned_at) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="userAchievements.length > 6" class="text-center mt-4">
+                                <button @click="currentView = 'achievements'" class="btn-secondary">
+                                    Показать все достижения ({{ userAchievements.length }})
+                                </button>
+                            </div>
+                            <div v-if="userAchievements.length === 0" class="text-center py-8">
+                                <p class="text-gray-500">Пройдите квизы, чтобы получить достижения!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && user.role === 'admin' && currentView === 'createQuiz'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Создание нового квиза</h2>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-gray-50 p-6 rounded-xl">
+                                <h3 class="text-lg font-medium text-gray-800 mb-4">Основная информация</h3>
+                                <div class="grid md-grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Название квиза</label>
+                                        <input v-model="newQuiz.title" type="text" class="input-field" placeholder="Основы Python">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Время (минут)</label>
+                                        <input v-model="newQuiz.time_limit_minutes" type="number" class="input-field" min="1" max="60" value="5">
+                                    </div>
+                                    <div class="md-col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                                        <textarea v-model="newQuiz.description" rows="3" class="input-field" placeholder="Описание квиза..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div v-for="(question, qIndex) in newQuiz.questions" :key="qIndex"
+                                 class="bg-gray-50 p-6 rounded-xl">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-medium text-gray-800">Вопрос {{ qIndex + 1 }}</h3>
+                                    <button @click="removeQuestion(qIndex)" class="text-red-600 hover-text-red-800">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Текст вопроса</label>
+                                        <textarea v-model="question.text" rows="2" class="input-field" placeholder="Введите вопрос..."></textarea>
+                                    </div>
+                                    
+                                    <div class="grid md-grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Баллы</label>
+                                            <input v-model="question.points" type="number" class="input-field" min="1" max="10" value="1">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Объяснение</label>
+                                            <input v-model="question.explanation" type="text" class="input-field" placeholder="Пояснение к ответу">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Варианты ответов</label>
+                                        <div v-for="(option, oIndex) in question.options" :key="oIndex"
+                                             class="flex items-center space-x-3 mb-2">
+                                            <input v-model="option.text" type="text" 
+                                                   class="input-field flex-grow" 
+                                                   placeholder="Текст варианта">
+                                            <label class="flex items-center space-x-2">
+                                                <input 
+                                                    type="radio" 
+                                                    :name="'question_' + qIndex" 
+                                                    :value="oIndex"
+                                                    v-model="question.correctOptionIndex"
+                                                    class="h-4 w-4 text-indigo-600"
+                                                >
+                                                <span class="text-sm text-gray-700">Правильный</span>
+                                            </label>
+                                            <button @click="removeOption(qIndex, oIndex)" 
+                                                    class="text-red-600 hover-text-red-800">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <button @click="addOption(qIndex)" class="btn-secondary text-sm">
+                                            <i class="fas fa-plus mr-1"></i>Добавить вариант
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between">
+                                <button @click="addQuestion" class="btn-secondary">
+                                    <i class="fas fa-plus mr-2"></i>Добавить вопрос
+                                </button>
+                                
+                                <button @click="createNewQuiz" class="btn-primary" :disabled="!isQuizValid">
+                                    <i class="fas fa-save mr-2"></i>Сохранить квиз
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'export'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Экспорт результатов</h2>
+                        
+                        <div class="max-w-md mx-auto">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Формат экспорта</label>
+                                    <div class="flex space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" v-model="exportFormat" value="csv" class="h-4 w-4 text-indigo-600">
+                                            <span class="ml-2">CSV</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" v-model="exportFormat" value="json" class="h-4 w-4 text-indigo-600">
+                                            <span class="ml-2">JSON</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid md-grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Начальная дата</label>
+                                        <input v-model="exportStartDate" type="date" class="input-field">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Конечная дата</label>
+                                        <input v-model="exportEndDate" type="date" class="input-field">
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                                        <div>
+                                            <p class="text-sm text-blue-700">
+                                                Экспорт будет содержать все ваши завершенные попытки в выбранном формате.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button @click="exportResults" class="btn-primary w-full">
+                                    <i class="fas fa-download mr-2"></i>Экспортировать результаты
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'achievements'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Мои достижения</h2>
+                        
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-800">Достигнутые</h3>
+                                <span class="text-sm text-gray-500">{{ userAchievements.length }} из {{ achievements.length }}</span>
+                            </div>
+                            
+                            <div class="grid md-grid-cols-2 lg-grid-cols-3 gap-4">
+                                <div v-for="achievement in userAchievements" :key="achievement.id"
+                                     class="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border border-yellow-200 shadow-hover fade-in">
+                                    <div class="flex items-start">
+                                        <div class="bg-yellow-100 p-3 rounded-lg mr-4">
+                                            <i class="fas fa-trophy text-yellow-600 text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 mb-1">{{ achievement.achievement.name }}</h4>
+                                            <p class="text-sm text-gray-600 mb-2">{{ achievement.achievement.description }}</p>
+                                            <div class="text-xs text-gray-500">
+                                                Получено: {{ formatDate(achievement.earned_at) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div v-if="userAchievements.length === 0" class="text-center py-8">
+                                <i class="fas fa-trophy text-4xl text-gray-300 mb-4"></i>
+                                <h3 class="text-xl font-medium text-gray-600 mb-2">Достижений пока нет</h3>
+                                <p class="text-gray-500">Пройдите квизы, чтобы получить достижения!</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Все доступные достижения</h3>
+                            <div class="space-y-3">
+                                <div v-for="achievement in achievements" :key="achievement.id"
+                                     class="p-4 border rounded-lg hover-bg-gray-50 transition-colors slide-in">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="mr-4">
+                                                <i :class="[
+                                                    'fas text-2xl',
+                                                    achievement.type === 'perfect_score' ? 'fa-star text-yellow-500' :
+                                                    achievement.type === 'fast_completion' ? 'fa-bolt text-blue-500' :
+                                                    achievement.type === 'streak' ? 'fa-fire text-red-500' :
+                                                    'fa-medal text-gray-500'
+                                                ]"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800">{{ achievement.name }}</h4>
+                                                <p class="text-sm text-gray-600">{{ achievement.description }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div v-if="userAchievements.find(a => a.achievement_id === achievement.id)"
+                                                 class="text-green-600 text-sm">
+                                                <i class="fas fa-check-circle mr-1"></i>Получено
+                                            </div>
+                                            <div v-else class="text-gray-400 text-sm">
+                                                Не получено
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && user.role === 'admin' && currentView === 'questionBanks'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Банки вопросов</h2>
+                                <p class="text-gray-600">Создавайте и управляйте банками вопросов</p>
+                            </div>
+                            <button @click="currentView = 'createQuestionBank'" class="btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Создать банк
+                            </button>
+                        </div>
+                        
+                        <div class="grid md-grid-cols-2 gap-6">
+                            <div v-for="bank in questionBanks" :key="bank.id"
+                                 class="quiz-card hover-shadow-xl transition-shadow duration-300 fade-in">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ bank.name }}</h3>
+                                        <p class="text-gray-600 text-sm mb-4">{{ bank.description || 'Без описания' }}</p>
+                                        <div class="flex items-center space-x-3 mb-3">
+                                            <span class="tag tag-blue">{{ bank.category || 'Без категории' }}</span>
+                                            <span v-if="bank.is_public" class="tag tag-green">Публичный</span>
+                                            <span v-if="bank.randomize_questions" class="tag tag-purple">Рандом вопросы</span>
+                                            <span v-if="bank.randomize_options" class="tag tag-yellow">Рандом варианты</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="text-sm text-gray-600">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-random mr-2"></i>
+                                            <span>Вопросов в квизе: {{ bank.questions_per_quiz }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center">
+                                    <button @click="generateQuizFromBank(bank.id)" 
+                                            class="btn-primary text-sm">
+                                        <i class="fas fa-magic mr-1"></i>Создать квиз
+                                    </button>
+                                    
+                                    <div class="text-sm text-gray-500">
+                                        <i class="far fa-calendar mr-1"></i>
+                                        {{ formatDate(bank.created_at) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="questionBanks.length === 0" class="text-center py-12">
+                            <i class="fas fa-database text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600 mb-2">Банков вопросов нет</h3>
+                            <p class="text-gray-500 mb-6">Создайте первый банк вопросов для повторного использования</p>
+                            <button @click="currentView = 'createQuestionBank'" class="btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Создать банк вопросов
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && user.role === 'admin' && currentView === 'createQuestionBank'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Создание банка вопросов</h2>
+                        
+                        <div class="max-w-2xl mx-auto">
+                            <div class="space-y-6">
+                                <div class="grid md-grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Название банка</label>
+                                        <input v-model="newQuestionBank.name" type="text" class="input-field" placeholder="Основы Python">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                                        <input v-model="newQuestionBank.category" type="text" class="input-field" placeholder="Программирование">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                                    <textarea v-model="newQuestionBank.description" rows="3" class="input-field" placeholder="Описание банка вопросов..."></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Теги (через запятую)</label>
+                                    <input v-model="newQuestionBank.tags" type="text" class="input-field" placeholder="python, основы, тестирование">
+                                </div>
+                                
+                                <div class="grid md-grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Вопросов в квизе</label>
+                                        <input v-model="newQuestionBank.questions_per_quiz" type="number" class="input-field" min="1" max="50" value="10">
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <h3 class="text-lg font-medium text-gray-800">Настройки</h3>
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <input v-model="newQuestionBank.is_public" type="checkbox" id="is-public" class="h-4 w-4 text-indigo-600">
+                                        <label for="is-public" class="text-sm text-gray-700">Публичный банк (виден другим пользователям)</label>
+                                    </div>
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <input v-model="newQuestionBank.randomize_questions" type="checkbox" id="randomize-questions" class="h-4 w-4 text-indigo-600">
+                                        <label for="randomize-questions" class="text-sm text-gray-700">Рандомизировать порядок вопросов</label>
+                                    </div>
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <input v-model="newQuestionBank.randomize_options" type="checkbox" id="randomize-options" class="h-4 w-4 text-indigo-600">
+                                        <label for="randomize-options" class="text-sm text-gray-700">Рандомизировать порядок вариантов ответов</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between pt-6 border-t">
+                                    <button @click="currentView = 'questionBanks'" class="btn-secondary">
+                                        <i class="fas fa-arrow-left mr-2"></i>Назад
+                                    </button>
+                                    
+                                    <button @click="createQuestionBank" class="btn-primary">
+                                        <i class="fas fa-save mr-2"></i>Создать банк
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'certificates'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Мои сертификаты</h2>
+                        
+                        <div class="grid md-grid-cols-2 gap-6">
+                            <div v-for="certificate in certificates" :key="certificate.id"
+                                 class="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6 shadow-hover fade-in">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800 mb-2">{{ certificate.quiz_title }}</h3>
+                                        <div class="text-sm text-gray-600 mb-4">
+                                            ID: {{ certificate.certificate_id }}
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-bold" :class="getPercentageColor(certificate.score_percentage)">
+                                            {{ certificate.score_percentage }}%
+                                        </div>
+                                        <div class="text-sm text-gray-600">Результат</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-sm text-gray-500 mb-4">
+                                    <i class="far fa-calendar mr-2"></i>
+                                    Выдан: {{ formatDate(certificate.issued_at) }}
+                                </div>
+                                
+                                <div class="flex justify-between">
+                                    <button @click="downloadCertificate(certificate)" class="btn-secondary text-sm">
+                                        <i class="fas fa-download mr-1"></i>Скачать
+                                    </button>
+                                    <button @click="shareCertificate(certificate)" class="btn-primary text-sm">
+                                        <i class="fas fa-share-alt mr-1"></i>Поделиться
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="certificates.length === 0" class="text-center py-12">
+                            <i class="fas fa-certificate text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600 mb-2">Сертификатов пока нет</h3>
+                            <p class="text-gray-500 mb-6">Завершите квизы с результатом выше 70%, чтобы получить сертификаты</p>
+                            <button @click="currentView = 'quizzes'" class="btn-primary">
+                                <i class="fas fa-play mr-2"></i>Начать квиз
+                            </button>
+                        </div>
+                        
+                        <div class="mt-8 pt-8 border-t">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Создать новые сертификаты</h3>
+                            <div v-if="userAttempts.length > 0" class="space-y-3">
+                                <div v-for="attempt in userAttempts.filter(a => !certificates.find(c => c.quiz_title === getQuizTitle(a.quiz_id)) && a.total_points / a.max_points >= 0.7)"
+                                     :key="attempt.id"
+                                     class="flex items-center justify-between p-3 border rounded-lg hover-bg-gray-50 slide-in">
+                                    <div>
+                                        <div class="font-medium text-gray-800">{{ getQuizTitle(attempt.quiz_id) }}</div>
+                                        <div class="text-sm text-gray-600">
+                                            {{ formatDate(attempt.finished_at) }} • 
+                                            {{ attempt.total_points }}/{{ attempt.max_points }} баллов
+                                        </div>
+                                    </div>
+                                    <button @click="generateCertificate(attempt.id)" class="btn-primary text-sm">
+                                        <i class="fas fa-certificate mr-1"></i>Создать сертификат
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-else class="text-center py-6">
+                                <p class="text-gray-500">Нет попыток, для которых можно создать сертификат</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="user && currentView === 'leaderboard'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Таблица лидеров</h2>
+                        
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Место
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Пользователь
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Достижения
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Очки
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Пройдено квизов
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="(entry, index) in leaderboard" :key="entry.user_id"
+                                        :class="entry.user_id === user.id ? 'bg-blue-50' : ''">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div v-if="index === 0" class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-crown text-white"></i>
+                                                </div>
+                                                <div v-else-if="index === 1" class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-medal text-white"></i>
+                                                </div>
+                                                <div v-else-if="index === 2" class="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-medal text-white"></i>
+                                                </div>
+                                                <div v-else class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                                    <span class="font-medium text-gray-700">{{ index + 1 }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div>
+                                                    <div class="font-medium text-gray-900">{{ entry.username }}</div>
+                                                    <div class="text-sm text-gray-500">{{ entry.user_id === user.id ? '(Вы)' : '' }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-lg font-bold text-gray-900">{{ entry.achievements_count }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-medium text-gray-900">{{ entry.total_points }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-medium text-gray-900">{{ entry.completed_quizzes }}</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div v-if="leaderboard.length === 0" class="text-center py-12">
+                            <i class="fas fa-chart-line text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600 mb-2">Таблица лидеров пуста</h3>
+                            <p class="text-gray-500">Пригласите друзей, чтобы сравнить результаты!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="notification.show" 
+             :class="['notification fade-in', notification.type === 'success' ? 'notification-success' : 'notification-error']">
+            <i :class="['mr-2', notification.type === 'success' ? 'fas fa-check-circle status-icon-success' : 'fas fa-exclamation-circle status-icon-error']"></i>
+            {{ notification.message }}
+            <button @click="hideNotification" class="ml-4 icon-button">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

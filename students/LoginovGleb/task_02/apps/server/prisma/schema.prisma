@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  moderator
+  user
+}
+
+model User {
+  id             String          @id @default(uuid())
+  username       String          @unique
+  email          String          @unique
+  passwordHash   String
+  role           Role            @default(user)
+  createdAt      DateTime        @default(now())
+  applications   Application[]
+  forms          Form[]          @relation("FormCreatedBy")
+  attachments    Attachment[]
+  refreshTokens  RefreshToken[]
+  statusHistories StatusHistory[] @relation("StatusHistoryChangedBy")
+}
+
+model RefreshToken {
+  id               String   @id @default(uuid())
+  tokenHash        String   @unique
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  replacedByTokenId String?
+  createdByIp      String?
+  userAgent        String?
+}
+
+model Form {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  fields      Json
+  isActive    Boolean  @default(true)
+  createdById String
+  createdBy   User     @relation("FormCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  applications Application[]
+}
+
+model Status {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  color       String?
+  order       Int?
+  isFinal     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  applications Application[]
+  fromHistory StatusHistory[] @relation("FromStatus")
+  toHistory   StatusHistory[] @relation("ToStatus")
+}
+
+model Application {
+  id          String   @id @default(uuid())
+  formId      String
+  userId      String
+  statusId    String
+  data        Json
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  submittedAt DateTime?
+  form        Form     @relation(fields: [formId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  status      Status   @relation(fields: [statusId], references: [id])
+  attachments Attachment[]
+  history     StatusHistory[]
+}
+
+model Attachment {
+  id             String   @id @default(uuid())
+  applicationId  String
+  filename       String
+  filePath       String
+  fileSize       Int
+  mimeType       String
+  uploadedById   String
+  uploadedAt     DateTime @default(now())
+  application    Application @relation(fields: [applicationId], references: [id])
+  uploadedBy     User        @relation(fields: [uploadedById], references: [id])
+}
+
+model StatusHistory {
+  id            String   @id @default(uuid())
+  applicationId String
+  fromStatusId  String?
+  toStatusId    String
+  changedById   String
+  changedAt     DateTime @default(now())
+  comment       String?
+  application   Application @relation(fields: [applicationId], references: [id])
+  fromStatus    Status?     @relation("FromStatus", fields: [fromStatusId], references: [id])
+  toStatus      Status      @relation("ToStatus", fields: [toStatusId], references: [id])
+  changedBy     User        @relation("StatusHistoryChangedBy", fields: [changedById], references: [id])
+}

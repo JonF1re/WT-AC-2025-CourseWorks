@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ads Board</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <svg style="width: 1.5rem; height: 1.5rem; margin-right: 0.5rem; display: inline-block; vertical-align: text-bottom;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+          </svg>
+          Ads Board
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-nav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link" href="/">Browse</a></li>
+            <li class="nav-item"><a class="nav-link" href="/ads/new">Sell</a></li>
+            <li class="nav-item"><a class="nav-link" href="/conversations">Messages</a></li>
+            <li class="nav-item d-none"><a class="nav-link" href="/my-ads" id="nav-myads">My Ads</a></li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item d-none" id="nav-moderator">
+              <a class="nav-link" href="/moderator">Moderation</a>
+            </li>
+            <li class="nav-item d-none" id="nav-admin">
+              <a class="nav-link" href="/admin">Admin</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/login" id="nav-login">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/register" id="nav-register">Register</a>
+            </li>
+            <li class="nav-item dropdown d-none" id="nav-user">
+              <a class="nav-link dropdown-toggle" href="#" id="user-dropdown" role="button" data-bs-toggle="dropdown">
+                <span id="nav-username">User</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-dropdown">
+                <li><a class="dropdown-item" href="/my-ads">My Ads</a></li>
+                <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logout-btn">Logout</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4" id="main-content">
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Toast container -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+      <div id="toast-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

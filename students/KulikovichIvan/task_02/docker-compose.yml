@@ -1,0 +1,39 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: quizuser
+      POSTGRES_PASSWORD: quizpassword
+      POSTGRES_DB: quizdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quizuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://quizuser:quizpassword@postgres:5432/quizdb
+      SECRET_KEY: your-secret-key-change-in-production
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data  # Для сохранения SQLite если используется
+    command: >
+      sh -c "python -c 'import time; time.sleep(5)' &&
+             uvicorn main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:
